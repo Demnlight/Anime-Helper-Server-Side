@@ -13,7 +13,8 @@ enum MSG_TYPE
 	MSG_REGISTER = 1,
 	MSG_LOGIN = 2,
 	MSG_PUSHLIST = 3,
-	MSG_SAVELIST = 4
+	MSG_SAVELIST = 4,
+	MSG_LOGINTOKEN = 5
 };
 
 class C_Message

@@ -27,6 +27,9 @@
     <ClCompile Include="Backend\Tools.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="Backend\Helpers\base64.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Backend\Helpers\Json.hpp">
@@ -42,6 +45,9 @@
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="Backend\Helpers\Message.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Backend\Helpers\base64.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>

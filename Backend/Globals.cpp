@@ -75,6 +75,8 @@ void C_Globals::HandleClients()
                     g_Events->OnAccountLogin(Client, jAcceptedMessage);
                 else if (iType == MSG_PUSHLIST)
                     g_Events->OnPushAnimeList(Client, jAcceptedMessage);
+                else if (iType == MSG_LOGINTOKEN)
+                    g_Events->OnAccountLoginToken(Client, jAcceptedMessage);
                 else
                     g_Tools->KickClient(Client);
             }

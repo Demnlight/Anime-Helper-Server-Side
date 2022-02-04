@@ -146,11 +146,13 @@
   <ItemGroup>
     <ClCompile Include="Backend\Events.cpp" />
     <ClCompile Include="Backend\Globals.cpp" />
+    <ClCompile Include="Backend\Helpers\base64.cpp" />
     <ClCompile Include="Backend\Tools.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Backend\Globals.h" />
+    <ClInclude Include="Backend\Helpers\base64.h" />
     <ClInclude Include="Backend\Helpers\Json.hpp" />
     <ClInclude Include="Backend\Helpers\Logs.hpp" />
     <ClInclude Include="Backend\Helpers\Message.hpp" />

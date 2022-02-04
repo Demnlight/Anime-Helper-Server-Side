@@ -1,5 +1,8 @@
 #include "Globals.h"
-
+bool is_empty1(std::ifstream& pFile)
+{
+	return pFile.peek() == std::ifstream::traits_type::eof();
+}
 void C_Tools::KickClient(C_Client& Client)
 {
 	std::string strLogMsg = "";
@@ -104,6 +107,44 @@ std::string C_Tools::CheckUser(std::string strUsername, std::string strPassword)
 
 	return "OK";
 }
+
+std::string C_Tools::CheckUserToken(std::string strToken, std::string strHwid)
+{
+	std::string strUsername = g_Tools->GetUsernameFromHWID(strHwid);
+	std::ifstream fFile("ServerData/Users/UserList/" + strUsername + ".usr", std::ios::in);
+	if (!fFile.good())
+		return "User not found.";
+
+	nlohmann::json jUserfile;
+	fFile >> jUserfile;
+	fFile.close();
+
+	if (jUserfile["Data"]["Name"].get< std::string >() != strUsername)
+		return "User not found.";
+
+	if (jUserfile["Data"]["Hwid"].get< std::string >() != strHwid)
+		return "Hwid incorrect.";
+
+	if (jUserfile["Data"]["Token"].get< std::string >() != strToken)
+		return "Token incorrect.";
+
+	return "OK";
+}
+
+
+std::string C_Tools::GetTokenByHwid(std::string strHwid)
+{
+	std::string strUsername = g_Tools->GetUsernameFromHWID(strHwid);
+	std::ifstream fFile("ServerData/Users/UserList/" + strUsername + ".usr", std::ios::in);
+	if (!fFile.good())
+		return "User not found.";
+
+	nlohmann::json jUserfile;
+	fFile >> jUserfile;
+	fFile.close();
+
+	return jUserfile["Data"]["Token"].get< std::string >();
+}
 std::string C_Tools::IsValidUsernameAndPassword(std::string strName, std::string strPassword)
 {
 	if (strName.length() < 3)
@@ -176,14 +217,18 @@ std::string C_Tools::IsValidUsernameAndPassword(std::string strName, std::string
 }
 std::string C_Tools::GetUsernameFromHWID(std::string strHWID)
 {
-	std::ifstream pHWIDFileIn("ServerData/Users/hwid/Hwid.hwd", std::ios::in);
+	std::ifstream pHWIDFileIn("ServerData/Users/Hwid/Hwid.hwd", std::ios::in);
+	if (!pHWIDFileIn.is_open())
+		return "failed";
+	if (is_empty1(pHWIDFileIn))
+		return "failed";
 
 	nlohmann::json jHwidfile;
 	pHWIDFileIn >> jHwidfile;
 	pHWIDFileIn.close();
 
 	std::string strUsername = "";
-	for (auto& jUser : jHwidfile["HWID"].get< nlohmann::json::object_t >())
+	for (auto& jUser : jHwidfile["Hwid"].get< nlohmann::json::object_t >())
 	{
 		if (jUser.second.get< std::string >() != strHWID)
 			continue;
@@ -193,4 +238,48 @@ std::string C_Tools::GetUsernameFromHWID(std::string strHWID)
 	}
 
 	return strUsername;
+}
+
+std::string C_Tools::GetHWID()
+{
+	HANDLE hFile = CreateFileA(("\\\\.\\PhysicalDrive0"), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+	if (hFile == INVALID_HANDLE_VALUE)
+		return { };
+
+	std::unique_ptr< std::remove_pointer <HANDLE >::type, void(*)(HANDLE) > hDevice
+	{
+		hFile, [](HANDLE handle)
+		{
+			CloseHandle(handle);
+		}
+	};
+
+	STORAGE_PROPERTY_QUERY PropertyQuery;
+	PropertyQuery.PropertyId = StorageDeviceProperty;
+	PropertyQuery.QueryType = PropertyStandardQuery;
+
+	STORAGE_DESCRIPTOR_HEADER DescHeader;
+	DWORD dwBytesReturned = 0;
+	if (!DeviceIoControl(hDevice.get(), IOCTL_STORAGE_QUERY_PROPERTY, &PropertyQuery, sizeof(STORAGE_PROPERTY_QUERY),
+		&DescHeader, sizeof(STORAGE_DESCRIPTOR_HEADER), &dwBytesReturned, NULL))
+		return { };
+
+	const DWORD dwOutBufferSize = DescHeader.Size;
+	std::unique_ptr< BYTE[] > pOutBuffer{ new BYTE[dwOutBufferSize] { } };
+
+	if (!DeviceIoControl(hDevice.get(), IOCTL_STORAGE_QUERY_PROPERTY, &PropertyQuery, sizeof(STORAGE_PROPERTY_QUERY),
+		pOutBuffer.get(), dwOutBufferSize, &dwBytesReturned, NULL))
+		return { };
+
+	STORAGE_DEVICE_DESCRIPTOR* pDeviceDescriptor = reinterpret_cast<STORAGE_DEVICE_DESCRIPTOR*>(pOutBuffer.get());
+	if (!pDeviceDescriptor)
+		return { };
+
+	const DWORD dwSerialNumberOffset = pDeviceDescriptor->SerialNumberOffset;
+	if (!dwSerialNumberOffset)
+		return { };
+
+	std::string sResult = reinterpret_cast<const char*>(pOutBuffer.get() + dwSerialNumberOffset);
+	sResult.erase(std::remove_if(sResult.begin(), sResult.end(), std::isspace), sResult.end());
+	return sResult;
 }
