@@ -177,9 +177,12 @@ void C_Events::OnAccountLogin(C_Client& Client, C_Message& jMessage)
 
 void C_Events::OnPushAnimeList(C_Client& Client, C_Message& Message)
 {
-	nlohmann::json ListCfg;
+	nlohmann::json AnimeList;
+	nlohmann::json FavoriteAnimeList;
+	nlohmann::json AllJson;
 	auto strUsername = Message.GetMsgBlank("Username");
 	auto strAddress = Client.m_FullAddress;
+	auto srtWannaTake = Message.GetMsgBlank("WannaTake");
 
 	if (!Client.m_bAuthenticated)
 	{
@@ -192,27 +195,75 @@ void C_Events::OnPushAnimeList(C_Client& Client, C_Message& Message)
 	}
 
 	std::string strUserFileName = "ServerData/Users/UserData/AllAnimeList.cfg";
-	std::ifstream in(strUserFileName);
+	std::string strUserFileNameFavorites = "ServerData/Users/UserData/data_" + Client.m_Username + "/FavoriteAnimeList.cfg";
 
-	if (is_empty2(in))
+	if (srtWannaTake == "0")
 	{
-		g_Tools->SendNetMessage(Client, C_Message(RESULT_OK, "Failed to open file"));
-		LOG("Failed to open file");
+		std::ifstream UserFileName(strUserFileName);
+		if (is_empty2(UserFileName))
+		{
+			g_Tools->SendNetMessage(Client, C_Message(RESULT_OK, "Failed to open AllAnimeList.cfg"));
+			LOG("Failed to open AllAnimeList.cfg");
+		}
+		if (UserFileName.is_open())
+		{
+			UserFileName >> AllJson;
+			LOG("AnimeList.cfg success loaded");
+		}
+		UserFileName.close();
+	}
+	else
+	{
+		std::ifstream UserFileNameFavorites(strUserFileNameFavorites);
+		if (is_empty2(UserFileNameFavorites))
+		{
+			g_Tools->SendNetMessage(Client, C_Message(RESULT_OK, "Failed to open FavoriteAnimeList.cfg"));
+			LOG("Failed to open FavoriteAnimeList.cfg");
+		}
+		if (UserFileNameFavorites.is_open())
+		{
+			UserFileNameFavorites >> AllJson;
+			LOG("FavoriteAnimeList.cfg success loaded");
+		}
+		UserFileNameFavorites.close();
 	}
 
-	if (in.is_open())
-	{
-		in >> ListCfg;
-	}
-	in.close();
-
-	std::string jAnswer = ListCfg.dump(4);
-
-	std::string finallog = "Send AllAnimeList.cfg from: ";
+	std::string finallog = srtWannaTake == "0" ? "Send AllAnimeList.cfg from: " : "Send FavoriteAnimeList.cfg from: ";
 	finallog += strUserFileName;
 	finallog += " | to ";
 	finallog += strUsername;
 
 	LOG(finallog.c_str());
-	g_Tools->SendNetMessage(Client, jAnswer);
+	g_Tools->SendNetMessage(Client, AllJson.dump(4));
+}
+void C_Events::OnSaveAnimeList(C_Client& Client, C_Message& Message)
+{
+	nlohmann::json ListCfg;
+	auto strAddress = Client.m_FullAddress;
+
+	if (!Client.m_bAuthenticated)
+	{
+		nlohmann::json answer;
+		answer["Data"]["Result"] = "Denied";
+		answer["Data"]["Reason"] = "Client doesnt authenticated";
+		g_Tools->SendNetMessage(Client, C_Message(RESULT_OK, answer.dump(4)));
+		LOG("Client.m_bAuthenticated false");
+		return;
+	}
+
+	std::string strUserFileName = "ServerData/Users/UserData/data_" + Client.m_Username + "/FavoriteAnimeList.cfg";
+	std::ofstream in(strUserFileName);
+	if (in.is_open())
+	{
+		in << Message.GetJSON().dump(4);
+	}
+	in.close();
+
+	std::string finallog = "Save FavoriteAnimeList from: ";
+	finallog += Client.m_Username;
+	finallog += " | to ";
+	finallog += strUserFileName;
+
+	LOG(finallog.c_str());
+	g_Tools->SendNetMessage(Client, "Success");
 }
