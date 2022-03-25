@@ -31,9 +31,9 @@ void C_Events::OnAccountCreation(C_Client& Client, C_Message& Message)
 	if (strResult != "OK")
 	{
 		std::string strSomething = strAddress;
-		strSomething += " gave invalid credentials. ( Account Creation )";
+		strSomething += " gave invalid credentials. error: ";
+		strSomething += strResult;
 		LOG(strSomething.c_str());
-		LOG(strResult.c_str());
 
 		g_Tools->SendNetMessage(Client, C_Message(RESULT_FAIL, strResult));
 		return;
@@ -120,6 +120,10 @@ void C_Events::OnAccountLoginToken(C_Client& Client, C_Message& jMessage)
 	std::string strSomething = Client.m_FullAddress;
 	strSomething += " logged in as ";
 	strSomething += strUsername;
+	strSomething += " token: ";
+	strSomething += strToken;
+	strSomething += " hwid: ";
+	strSomething += strHwid;
 	LOG(strSomething.c_str());
 }
 
@@ -208,7 +212,6 @@ void C_Events::OnPushAnimeList(C_Client& Client, C_Message& Message)
 		if (UserFileName.is_open())
 		{
 			UserFileName >> AllJson;
-			LOG("AnimeList.cfg success loaded");
 		}
 		UserFileName.close();
 	}
@@ -223,7 +226,6 @@ void C_Events::OnPushAnimeList(C_Client& Client, C_Message& Message)
 		if (UserFileNameFavorites.is_open())
 		{
 			UserFileNameFavorites >> AllJson;
-			LOG("FavoriteAnimeList.cfg success loaded");
 		}
 		UserFileNameFavorites.close();
 	}

@@ -45,10 +45,6 @@ void C_Globals::HandleClients()
 
         if (g_Data->m_Clients.size() > 0)
         {
-            std::string ClientSize = "Client size: ";
-            ClientSize += std::to_string(g_Data->m_Clients.size());
-            LOG(ClientSize.c_str());
-
             for (C_Client& Client : g_Data->m_Clients)
             {
                 char aReceived[512000];
